@@ -1,0 +1,33 @@
+name: BHome
+version: 1.0
+description: Player home commands
+author: RedstoneFiend
+website: https://github.com/RedstoneFiend/BHome
+
+main: io.github.redstonefiend.bhome.Main
+database: false
+
+commands:
+    bhome:
+        description: Boomerang Home administrative commands.
+        usage: /<command> [ver[sion] | reload | max [number]]
+        permission: bhome.bhome
+    sethome:
+        description: Set a home.
+        usage: /<command> [name]
+    delhome:
+        description: Delete a home.
+        usage: /<command> [name]
+    home:
+        description: List homes or teleport to a home if name is specified.
+        usage: /<command> [name]
+
+# Permissions
+permissions:
+    bhome.*:
+        description: Gives access to all BHome commands
+        children:
+            bhome.bhome: true
+    bhome.bhome:
+        description: Allows access to administrative commands.
+        default: op
