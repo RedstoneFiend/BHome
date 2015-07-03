@@ -29,9 +29,8 @@ import io.github.redstonefiend.bhome.commands.SetHome;
 import io.github.redstonefiend.bhome.listeners.PlayerJoin;
 import io.github.redstonefiend.bhome.listeners.PlayerQuit;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -61,15 +60,14 @@ public class Main extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
+        this.getDataFolder().mkdir();
         this.getConfig().options().copyDefaults(true);
         this.saveConfig();
 
         this.maxHomes = this.getConfig().getInt("max_homes");
         this.teleportMessage = this.getConfig().getString("teleport_message");
 
-        if (!homesFolder.exists()) {
-            homesFolder.mkdir();
-        }
+        homesFolder.mkdir();
 
         for (Player player : this.getServer().getOnlinePlayers()) {
             loadPlayerHomes(player);
@@ -142,18 +140,8 @@ public class Main extends JavaPlugin implements Listener {
 
     @Override
     public void saveConfig() {
-        String header
-                = "################################\n"
-                + "# Boomerang Home Configuration #\n"
-                + "################################\n\n"
-                + "# Message string should be quoted using single quotes (').\n"
-                + "# Message string can include color formating codes:\n"
-                + "#   &x - color code where x is the color number as defined at\n"
-                + "#        http://minecraft.gamepedia.com/Formatting_codes.";
-
         String str = this.getConfig().saveToString();
         StringBuilder sb = new StringBuilder(str);
-        sb.replace(0, sb.indexOf("\n"), header);
 
         sb.insert(sb.indexOf("\nversion:") + 1,
                 "\n# Configuration version used during upgrade. Do not change.\n");
@@ -174,12 +162,13 @@ public class Main extends JavaPlugin implements Listener {
             public void run() {
                 cfg_file.delete();
                 try (PrintWriter writer = new PrintWriter(cfg_file, "UTF-8")) {
+                    cfg_file.createNewFile();
                     writer.write(cfg_str);
                     writer.close();
-                } catch (FileNotFoundException | UnsupportedEncodingException ex) {
+                } catch (IOException ex) {
                     logger.severe("Error saving configuration!");
                 }
             }
-        }.runTaskLater(this, 1);
+        }.runTaskAsynchronously(this);
     }
 }

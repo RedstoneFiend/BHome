@@ -1,4 +1,6 @@
-# Boomerang Home Configuration
+# ******************
+# * Boomerang Home *
+# ******************
 version: 1
 max_homes: 5
 teleport_message: '&eWoosh...'
