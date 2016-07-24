@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2015 Chris Courson.
+ * Copyright 2016 Chris Courson.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,7 @@
  */
 package io.github.redstonefiend.bhome;
 
+import io.github.redstonefiend.bhome.commands.BHome;
 import io.github.redstonefiend.bhome.commands.DelHome;
 import io.github.redstonefiend.bhome.commands.Home;
 import io.github.redstonefiend.bhome.commands.SetHome;
@@ -31,6 +32,7 @@ import io.github.redstonefiend.bhome.listeners.PlayerQuit;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +42,7 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -49,39 +52,35 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  *
- * @author Chris
+ * @author Chris Courson
  */
-public class Main extends JavaPlugin implements Listener {
+public class Main
+        extends JavaPlugin
+        implements Listener {
 
-    public int maxHomes = 0;
-    public String teleportMessage = "";
-    public Map<UUID, Map<String, Location>> homes = new HashMap<>();
-    public final File homesFolder = new File(this.getDataFolder(), "homes");
+    public Map<UUID, Map<String, Location>> homes = new HashMap();
+    public final File homesFolder = new File(getDataFolder(), "homes");
 
     @Override
     public void onEnable() {
-        this.getDataFolder().mkdir();
-        this.getConfig().options().copyDefaults(true);
-        this.saveConfig();
+        getDataFolder().mkdir();
+        getConfig().options().copyDefaults(true);
+        saveConfig();
 
-        this.maxHomes = this.getConfig().getInt("max_homes");
-        this.teleportMessage = this.getConfig().getString("teleport_message");
-
-        homesFolder.mkdir();
-
-        for (Player player : this.getServer().getOnlinePlayers()) {
+        this.homesFolder.mkdir();
+        for (Player player : getServer().getOnlinePlayers()) {
             loadPlayerHomes(player);
         }
 
         getServer().getPluginManager().registerEvents(new PlayerJoin(this), this);
         getServer().getPluginManager().registerEvents(new PlayerQuit(this), this);
 
-        getCommand("bhome").setExecutor(new SetHome(this));
+        getCommand("bhome").setExecutor(new BHome(this));
         getCommand("sethome").setExecutor(new SetHome(this));
         getCommand("delhome").setExecutor(new DelHome(this));
         getCommand("home").setExecutor(new Home(this));
 
-        this.getLogger().log(Level.INFO, "BHome version {0} loaded.", this.getDescription().getVersion());
+        getLogger().log(Level.INFO, "BHome version {0} loaded.", getDescription().getVersion());
     }
 
     @Override
@@ -92,23 +91,28 @@ public class Main extends JavaPlugin implements Listener {
     public void loadPlayerHomes(Player player) {
         YamlConfiguration homeConfig = new YamlConfiguration();
         try {
-            homeConfig.load(new File(homesFolder, player.getUniqueId().toString() + ".yml"));
+            File file = new File(this.homesFolder, player.getUniqueId().toString() + ".yml");
+            if (file.exists()) {
+                homeConfig.load(file);
+                file.setLastModified(new Date().getTime());
+            }
         } catch (Exception ex) {
-
+            getLogger().log(Level.SEVERE, "Exception thrown while loading player homes ({0}:{1}):\n{2}",
+                    new Object[]{player.getDisplayName(), player.getUniqueId(), ex});
         }
-        Map<String, Location> playerHomesMap = new HashMap<>();
+
+        Map<String, Location> playerHomesMap = new HashMap();
         for (String homeName : homeConfig.getKeys(false)) {
             try {
                 playerHomesMap.put(homeName, new Location(
-                        this.getServer().getWorld(homeConfig.getString(homeName + ".world")),
-                        homeConfig.getInt(homeName + ".x"),
-                        homeConfig.getInt(homeName + ".y"),
-                        homeConfig.getInt(homeName + ".z"),
-                        homeConfig.getInt(homeName + ".yaw"),
-                        homeConfig.getInt(homeName + ".pitch")
-                ));
+                        getServer().getWorld(homeConfig.getString(homeName + ".world")), homeConfig
+                        .getInt(homeName + ".x"), homeConfig
+                        .getInt(homeName + ".y"), homeConfig
+                        .getInt(homeName + ".z"), homeConfig
+                        .getInt(homeName + ".yaw"), homeConfig
+                        .getInt(homeName + ".pitch")));
             } catch (Exception ex) {
-                this.getLogger().log(Level.SEVERE, "Unable to load player home ''{0}'' from {1}.yml",
+                getLogger().log(Level.SEVERE, "Unable to load player home ''{0}'' from {1}.yml",
                         new Object[]{homeName, player.getUniqueId().toString()});
             }
         }
@@ -116,55 +120,68 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public void printHomes(Player player) {
-        Set<String> homesSet = this.homes.get(player.getUniqueId()).keySet();
-        String homesMax = Integer.toString(this.maxHomes);
+        Set<String> homesSet = ((Map) this.homes.get(player.getUniqueId())).keySet();
+        String homesMax = Integer.toString(getConfig().getInt("max_homes", 5));
         if (player.hasPermission("bhome.unlimited")) {
             homesMax = "Unlimited";
         } else {
             Set<PermissionAttachmentInfo> perms = player.getEffectivePermissions();
             for (PermissionAttachmentInfo perm : perms) {
-                if (!perm.getValue()) {
-                    continue;
-                }
-                String s = perm.getPermission();
-                if (s.startsWith("bhome.max.")) {
-                    homesMax = s.substring(s.lastIndexOf('.') + 1);
+                if (perm.getValue()) {
+                    String s = perm.getPermission();
+                    if (s.startsWith("bhome.max.")) {
+                        homesMax = s.substring(s.lastIndexOf('.') + 1);
+                    }
                 }
             }
         }
-        player.sendMessage(String.format(ChatColor.YELLOW + "Homes (%d/%s): %s",
-                homesSet.size(),
-                homesMax,
-                homesSet.toString().replaceAll("[\\[\\]]", "")));
+        player.sendMessage(String.format(ChatColor.YELLOW + "Homes (%d/%s): %s", new Object[]{
+            homesSet.size(), homesMax, homesSet
+            .toString().replaceAll("[\\[\\]]", "")}));
     }
 
     @Override
     public void saveConfig() {
-        String str = this.getConfig().saveToString();
+        String str = getConfig().saveToString();
         StringBuilder sb = new StringBuilder(str);
 
-        sb.insert(sb.indexOf("\nversion:") + 1,
-                "\n# Configuration version used during upgrade. Do not change.\n");
+        sb.insert(sb.indexOf("\nversion:") + 1, "\n# Configuration version used during upgrade. Do not change.\n");
 
-        sb.insert(sb.indexOf("\nmax_homes") + 1,
-                "\n# The default maximum number of homes a player may set.\n");
+        sb.insert(sb.indexOf("\nmax_homes") + 1, "\n# The default maximum number of homes a player may set.\n");
 
-        sb.insert(sb.indexOf("\nteleport_message:") + 1,
-                "\n# Message displayed to player when teleported by home command.\n"
-                + "# Can include color codes (&x) where x is the color number.\n");
+        sb.insert(sb.indexOf("\nteleport_message:") + 1, "\n# Message displayed to player when teleported by home command.\n# Can include color codes (&x) where x is the color number.\n");
 
-        final File cfg_file = new File(this.getDataFolder(), "config.yml");
+        sb.insert(sb.indexOf("\nspawn_height:") + 1, "\n# Specifies the Y offset at the intersection of X + 0.5 and Z + 0.5\n# that player using 'home' command will spawn\n");
+
+        final File cfg_file = new File(getDataFolder(), "config.yml");
         final String cfg_str = sb.toString();
-        final Logger logger = this.getLogger();
+        final Logger logger = getLogger();
 
         new BukkitRunnable() {
             @Override
             public void run() {
                 cfg_file.delete();
-                try (PrintWriter writer = new PrintWriter(cfg_file, "UTF-8")) {
-                    cfg_file.createNewFile();
-                    writer.write(cfg_str);
-                    writer.close();
+                try {
+                    PrintWriter writer = new PrintWriter(cfg_file, "UTF-8");
+                    Throwable localThrowable3 = null;
+                    try {
+                        cfg_file.createNewFile();
+                        writer.write(cfg_str);
+                        writer.close();
+                    } catch (Throwable localThrowable1) {
+                        localThrowable3 = localThrowable1;
+                        throw localThrowable1;
+                    } finally {
+                        if (localThrowable3 != null) {
+                            try {
+                                writer.close();
+                            } catch (Throwable localThrowable2) {
+                                localThrowable3.addSuppressed(localThrowable2);
+                            }
+                        } else {
+                            writer.close();
+                        }
+                    }
                 } catch (IOException ex) {
                     logger.severe("Error saving configuration!");
                 }

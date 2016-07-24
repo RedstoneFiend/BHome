@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2015 Chris Courson.
+ * Copyright 2016 Chris Courson.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,10 @@ import org.bukkit.command.CommandSender;
 
 /**
  *
- * @author chrisbot
+ * @author Chris Courson
  */
-public class BHome implements CommandExecutor {
+public class BHome
+        implements CommandExecutor {
 
     private final Main plugin;
 
@@ -43,7 +44,7 @@ public class BHome implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if ((args.length == 0) || ((args.length == 1) && ((args[0].equalsIgnoreCase("ver") || args[0].equalsIgnoreCase("version"))))) {
+        if ((args.length == 0) || ((args.length == 1) && ((args[0].equalsIgnoreCase("ver")) || (args[0].equalsIgnoreCase("version"))))) {
             sender.sendMessage(ChatColor.GOLD + "Boomerang Home " + ChatColor.GREEN + "version " + ChatColor.YELLOW + this.plugin.getDescription().getVersion());
         } else if ((args.length == 1) && (args[0].equalsIgnoreCase("reload"))) {
             this.plugin.reloadConfig();
@@ -56,16 +57,18 @@ public class BHome implements CommandExecutor {
                 sender.sendMessage(ChatColor.RED + ex.getMessage().substring(18).replace("\"", "'") + " is not a number");
                 return true;
             }
-            plugin.maxHomes = max;
-            plugin.getConfig().set("max_homes", max);
-            plugin.saveConfig();
+            this.plugin.getConfig().set("max_homes", max);
+            this.plugin.saveConfig();
             sender.sendMessage(ChatColor.GREEN + "Max homes saved.");
         } else if ((args.length == 1) && (args[0].equalsIgnoreCase("max"))) {
-            sender.sendMessage(ChatColor.GREEN + "Max homes = " + Integer.toHexString(plugin.maxHomes) + ".");
+            sender.sendMessage(ChatColor.GREEN + "Max homes = " + Integer.toHexString(this.plugin.getConfig().getInt("max_homes", 5)) + ".");
         } else {
             return false;
         }
-
-        return true;
+        if (args.length == 0) {
+            return false;
+        } else {
+            return true;
+        }
     }
 }
