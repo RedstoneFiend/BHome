@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2015 Chris Courson.
+ * Copyright 2016 Chris Courson.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
  *
- * @author chrisbot
+ * @author Chris Courson
  */
 public class PlayerQuit implements Listener {
 
