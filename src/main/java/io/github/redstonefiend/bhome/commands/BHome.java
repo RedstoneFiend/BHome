@@ -79,7 +79,6 @@ public class BHome implements CommandExecutor {
                 }
             } else {
                 if (homes.containsKey(args[2].toLowerCase())) {
-
                     Location location = ((Location) (this.plugin.homes.get(playerID).get(args[2].toLowerCase()))).clone();
                     location.add(location.getX() > 0.0D ? 0.5D : -0.5D, plugin.getConfig().getDouble("spawn_height", 0.5D), location.getZ() > 0.0D ? 0.5D : -0.5D);
                     if (args[0].equalsIgnoreCase("show")) {
