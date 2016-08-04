@@ -4,3 +4,4 @@
 version: 1
 max_homes: 5
 teleport_message: '&eWoosh...'
+spawn_height: 0.5

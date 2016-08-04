@@ -21,27 +21,43 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package io.github.redstonefiend.bhome.listeners;
+package io.github.redstonefiend.bhome.commands;
 
 import io.github.redstonefiend.bhome.Main;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
+import java.util.ArrayList;
+import java.util.List;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 
 /**
  *
  * @author Chris Courson
  */
-public class PlayerJoin implements Listener {
+public class PlayerTabComplete implements TabCompleter {
 
-    private final Main plugin;
+    Main plugin;
 
-    public PlayerJoin(Main plugin) {
+    public PlayerTabComplete(Main plugin) {
         this.plugin = plugin;
     }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent e) {
-        plugin.homes.put(e.getPlayer().getUniqueId(), plugin.loadPlayerHomes(e.getPlayer().getUniqueId(), true));
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (!(sender instanceof Player)) {
+            return null;
+        }
+        Player player = (Player) sender;
+        List<String> list = new ArrayList();
+        switch (args.length) {
+            case 1:
+                for (String homeName : (this.plugin.homes.get(player.getUniqueId())).keySet()) {
+                    if (homeName.startsWith(args[0].toLowerCase())) {
+                        list.add(homeName.toLowerCase());
+                    }
+                }
+        }
+        return list;
     }
 }

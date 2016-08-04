@@ -60,15 +60,18 @@ public class Home implements CommandExecutor {
             player.sendMessage(ChatColor.RED + "Error in command.");
             return false;
         }
-        String homeName;
+        String homeName = null;
         if (args.length == 1) {
             homeName = args[0].toLowerCase();
         } else {
-            homeName = plugin.homes.get(player.getUniqueId()).keySet().iterator().next();
+            if (plugin.homes.get(player.getUniqueId()).keySet().iterator().hasNext()) {
+                homeName = plugin.homes.get(player.getUniqueId()).keySet().iterator().next();
+            }
         }
         if ((this.plugin.homes.get(player.getUniqueId())).containsKey(homeName)) {
-            Location location = ((Location) (this.plugin.homes.get(player.getUniqueId())).get(homeName)).clone().add(0.5D, plugin.getConfig().getDouble("spawn_height", 0.5D), 0.5D);
+            Location location = ((Location) (this.plugin.homes.get(player.getUniqueId())).get(homeName)).clone();
             if (location != null) {
+                location.add(location.getX() > 0.0D ? 0.5D : -0.5D, plugin.getConfig().getDouble("spawn_height", 0.5D), location.getZ() > 0.0D ? 0.5D : -0.5D);
                 if (player.getVehicle() != null) {
                     Entity entity = player.getVehicle();
                     entity.eject();
@@ -84,7 +87,11 @@ public class Home implements CommandExecutor {
                 this.plugin.printHomes(player);
             }
         } else {
-            player.sendMessage(ChatColor.RED + "Home '" + homeName + "' not found.");
+            if (homeName == null) {
+                player.sendMessage(ChatColor.RED + "No home set.");
+            } else {
+                player.sendMessage(ChatColor.RED + "Home '" + homeName + "' not found.");
+            }
         }
         return true;
     }

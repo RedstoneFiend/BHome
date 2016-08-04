@@ -21,6 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+// https://bukkit.org/threads/updater-2-3-easy-safe-and-policy-compliant-auto-updating-for-your-plugins-new.96681/
+
 package io.github.redstonefiend.bhome;
 
 import io.github.redstonefiend.bhome.commands.BHome;
@@ -42,7 +45,6 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -69,7 +71,7 @@ public class Main
 
         this.homesFolder.mkdir();
         for (Player player : getServer().getOnlinePlayers()) {
-            loadPlayerHomes(player);
+            homes.put(player.getUniqueId(), loadPlayerHomes(player.getUniqueId(), true));
         }
 
         getServer().getPluginManager().registerEvents(new PlayerJoin(this), this);
@@ -88,17 +90,17 @@ public class Main
         Bukkit.getScheduler().cancelTasks(this);
     }
 
-    public void loadPlayerHomes(Player player) {
+    public Map<String, Location> loadPlayerHomes(UUID playerID, boolean touch) {
         YamlConfiguration homeConfig = new YamlConfiguration();
         try {
-            File file = new File(this.homesFolder, player.getUniqueId().toString() + ".yml");
+            File file = new File(this.homesFolder, playerID.toString() + ".yml");
             if (file.exists()) {
                 homeConfig.load(file);
-                file.setLastModified(new Date().getTime());
+                if (touch) file.setLastModified(new Date().getTime());
             }
         } catch (Exception ex) {
             getLogger().log(Level.SEVERE, "Exception thrown while loading player homes ({0}:{1}):\n{2}",
-                    new Object[]{player.getDisplayName(), player.getUniqueId(), ex});
+                    new Object[]{getServer().getOfflinePlayer(playerID).getName(), playerID, ex});
         }
 
         Map<String, Location> playerHomesMap = new HashMap();
@@ -113,10 +115,10 @@ public class Main
                         .getInt(homeName + ".pitch")));
             } catch (Exception ex) {
                 getLogger().log(Level.SEVERE, "Unable to load player home ''{0}'' from {1}.yml",
-                        new Object[]{homeName, player.getUniqueId().toString()});
+                        new Object[]{homeName, playerID.toString()});
             }
         }
-        this.homes.put(player.getUniqueId(), playerHomesMap);
+        return playerHomesMap;
     }
 
     public void printHomes(Player player) {
