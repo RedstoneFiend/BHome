@@ -1,5 +1,5 @@
 name: BHome
-version: 1.5
+version: 1.7
 description: Player home commands
 author: RedstoneFiend
 website: https://github.com/RedstoneFiend/BHome
@@ -15,26 +15,15 @@ commands:
     sethome:
         description: Set a home.
         usage: /<command> [name]
-        permission: bhome.home
     delhome:
         description: Delete a home.
         usage: /<command> [name]
-        permission: bhome.home
     home:
         description: List homes or teleport to a home if name is specified.
         usage: /<command> [name]
-        permission: bhome.home
 
 # Permissions
 permissions:
-    bhome.*:
-        description: Gives access to all BHome commands
-        children:
-            bhome.bhome: true
-            bhome.home: true
     bhome.admin:
         description: Allows access to administrative commands.
-        default: op
-    bhome.home:
-        description: Allows access to home commands.
         default: op
